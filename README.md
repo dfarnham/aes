@@ -1,16 +1,16 @@
 # aes
 AES implementation for personal learning with NIST tests
 
-### Building
-# Compile the support library
+## Building
+### Compile the support library
 * $ cd lib
 * $ make spotless all
 
-# Compile the command line tool
+### Compile the command line tool
 * $ cd aes
 * $ make spotless all
 
-# Tests
+### Tests
 * $ cd aes
 * # Original crytopals test
 * $ make spotless test
@@ -19,7 +19,7 @@ AES implementation for personal learning with NIST tests
 * # Perl driver feeding NIST tests
 * $ make spotless nist-test
 
-# Command line usage summary
+## Command line usage summary
 ```Usage: ./aes -[128|192|256] -[ecb|cbc|ctr] -[encrypt|decrypt] -[hex]key passkey
 Options:
  -128, -192, -256    key length
@@ -39,3 +39,14 @@ Options:
  -ohex               output as 2-byte hex
  -file name          file or stdin, filename of - is treated as stdin
  ```
+ 
+ ## Example Usage
+ I like hex keys so turn a password into hex<br>
+ $ <b>echo 'a personal 32 character password' | hexbytes -sn
+ 6120706572736f6e616c203332206368617261637465722070617373776f7264</b><br>
+ 
+ Encrypt _somefile_ with aes 256 using a random iv and output as hex<br>
+ $ <b>aes -256 -encrypt -cbc -randiv -hexkey 6120706572736f6e616c203332206368617261637465722070617373776f7264 -ohex -file somefile > somefile_encrypted.hex</b><br>
+ 
+ Decrypt an input hex file back to its original<br>
+ $ <b>aes -256 -decrypt -cbc -randiv -hexkey 6120706572736f6e616c203332206368617261637465722070617373776f7264 -ihex -file somefile_encrypted.hex > somefile.orig</b><br>
