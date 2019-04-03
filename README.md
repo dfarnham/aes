@@ -11,13 +11,16 @@ AES implementation for personal learning with NIST tests
 * $ make spotless all
 
 ### Tests
-* $ cd aes
-* # Original crytopals test
-* $ make spotless test
-* # An internal fast test
-* $ make spotless itest
-* # Perl driver feeding NIST tests
-* $ make spotless nist-test
+<b>$ cd aes</b>
+
+Original crytopals test<br>
+<b>$ make spotless test</b><br>
+
+An internal fast test<br>
+<b>$ make spotless itest</b><br>
+
+Perl driver feeding NIST tests<br>
+<b>$ make spotless nist-test</b><br>
 
 ## Command line usage summary
 ```Usage: ./aes -[128|192|256] -[ecb|cbc|ctr] -[encrypt|decrypt] -[hex]key passkey
