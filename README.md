@@ -1,5 +1,5 @@
 # aes
-AES implementation for personal learning with NIST tests
+AES (Advanced Encryption Standard) implementation with NIST tests
 
 ## Building
 ### Compile the support library
