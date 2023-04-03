@@ -13,7 +13,7 @@ AES (Advanced Encryption Standard) implementation with NIST tests
 ### Tests
 <b>$ cd aes</b>
 
-Original crytopals test<br>
+Original cryptopals test<br>
 <b>$ make spotless test</b><br>
 
 An internal fast test<br>
