@@ -396,8 +396,8 @@ rotateRight(uchar c[4]) {
 void
 keycore(uchar input[4], int i) {
     rotateLeft(input);
-    for (int i = 0; i < 4; i++) {
-        input[i] = sbox(input[i]);
+    for (int j = 0; j < 4; j++) {
+        input[j] = sbox(input[j]);
     }
     input[0] ^= rcon(i);
 }
