@@ -544,7 +544,7 @@ aesEncrypt(int bits, int esize, const uchar *passkey, const uchar *data, int nby
      *      padded (16) is needed.  An additional full loop iteration is needed with
      *      no data bytes to consume.
      *
-     *      To handle this we initialze "pad" to 0 or 16 and modify the loop condition to:
+     *      To handle this we initialize "pad" to 0 or 16 and modify the loop condition to:
      *
      *          ( n < nbytes + pad/16 )
      *
