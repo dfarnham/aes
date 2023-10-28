@@ -1,3 +1,4 @@
-aes/aes
-*/*.o
-*/*.a
+Cargo.lock
+/target
+C/aes/aes
+*.[ao]

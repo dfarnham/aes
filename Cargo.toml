@@ -1,0 +1,23 @@
+[package]
+authors = ["Dave Farnham <dave.farnham@icloud.com>"]
+name = "aes"
+description = "Advanced Encryption Standard with NIST tests"
+readme = "README.md"
+repository = "https://github.com/dfarnham/aes"
+keywords = ["encryption", "aes"]
+categories = ["command-line-utilities"]
+license = "MIT"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[target.'cfg(target_family = "unix")'.dependencies]
+nix = { version = "0.27", features = ["signal"] }
+
+[dependencies]
+anyhow = "1"
+base64 = "0.21"
+clap = { version = "4", features = ["cargo", "derive"] }
+hex = "0.4.3"
+rand = "0.8.5"
