@@ -454,12 +454,12 @@ fn aes_ctr(bits: usize, passkey: &[u8], data: &[u8], iv: &[u8; 16]) -> Vec<u8> {
     let mut output = vec![0; nbytes];
     let mut n = 0;
     let mut ctr_block: [u8; 16] = [0; 16];
-    let mut counter: u64 = u64::from_le_bytes(iv[8..].try_into().expect("from_le_bytes"));
+    let mut counter: u64 = u64::from_be_bytes(iv[8..].try_into().expect("from_be_bytes"));
 
     ctr_block[..8].copy_from_slice(&iv[..8]);
 
     while n < nbytes {
-        ctr_block[8..].copy_from_slice(&counter.to_le_bytes());
+        ctr_block[8..].copy_from_slice(&counter.to_be_bytes());
         let blocks = aes_cipher_encrypt(bits, passkey, &ctr_block, &Cipher::ECB, iv);
         let mut i = 0;
         while n < nbytes && i < 16 {
