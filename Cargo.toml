@@ -1,7 +1,7 @@
 [package]
 authors = ["Dave Farnham <dave.farnham@icloud.com>"]
 name = "aes"
-description = "Advanced Encryption Standard with NIST tests"
+description = "Advanced Encryption Standard with NIST tests\nCompatible with OpenSSL options: -aes-[128,192,256]-[ecb,cbc,ctr]"
 readme = "README.md"
 repository = "https://github.com/dfarnham/aes"
 keywords = ["encryption", "aes"]
