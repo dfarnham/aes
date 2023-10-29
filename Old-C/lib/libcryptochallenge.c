@@ -7,8 +7,8 @@
 #include "libcryptochallenge.h"
 
 void    panic                   (int, const char *, ...);
-void    b64Encode               (const uchar[], uchar[], size_t);
-int     b64Decode               (const uchar[], uchar[]);
+void    b64Encode               (const uchar[3], uchar[4], size_t);
+int     b64Decode               (const uchar[4], uchar[3]);
 int     hammingDistance         (const uchar *, const uchar *);
 int     hexCharVal              (const char);
 int     hexByteVal              (const char *);
