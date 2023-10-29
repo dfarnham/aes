@@ -1,7 +1,9 @@
 # aes
-AES (Advanced Encryption Standard) implementation with NIST tests
 
-### a byproduct of [cryptopals](https://cryptopals.com/)
+* AES (Advanced Encryption Standard) implementation with NIST tests
+* Compatible with [OpenSSL options](https://www.openssl.org/): -aes-[128,192,256]-[ecb,cbc,ctr]
+
+### a byproduct of fun with [cryptopals](https://cryptopals.com/)
 
 
 ## Command line usage summary
@@ -58,33 +60,62 @@ test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fin
 
 ## Examples
 ```
-# make a 16 byte password from 2-byte hex
+# make a 16 byte password for examples
 $> echo foo | md5
 d3b07384d113edec49eaa6238ad5ff00
 ```
 
-# encrypt (output as Base-64)
+## Typical to use a random initialization vector (-r, --randiv)
 ```
-$> echo "hello world" | aes --cbc --encrypt --obase64 --hexkey d3b07384d113edec49eaa6238ad5ff00
-3bYgGt2qlQyTCOH8IWE97w==
-
-# decrypt
-$> echo 3bYgGt2qlQyTCOH8IWE97w== | aes --cbc --decrypt --ibase64 --hexkey d3b07384d113edec49eaa6238ad5ff00
+$> echo "hello world" | aes -creK d3b07384d113edec49eaa6238ad5ff00 | \
+                        aes -crdK d3b07384d113edec49eaa6238ad5ff00
 hello world
 ```
 
-## Typical to use a random initialization vector (-r, --randiv)
-```
-$> echo "hello world" | aes -creaK d3b07384d113edec49eaa6238ad5ff00
-cUzxtBeHDxHPplX1I/bcxHtHrEWr10LYCIchlkVki74=
+## OpenSSL compatible
 
-$> echo "hello world" | aes -creaK d3b07384d113edec49eaa6238ad5ff00
-1lmZZ7jGlInxAVujRtENtQsKQVTWMdGK6F4/Wp76Phc=
+### OpenSSL (ECB) encrypt => aes (ECB) decrypt
+```
+$> echo "hello world" | openssl enc -aes-128-ecb -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+                        aes --ecb -d -K d3b07384d113edec49eaa6238ad5ff00
+hello world
 ```
 
-## roundtrip
+### aes (ECB) encrypt => OpenSSL (ECB) decrypt
 ```
-$> echo "hello world" | aes -recK d3b07384d113edec49eaa6238ad5ff00 | \
-                        aes -rdcK d3b07384d113edec49eaa6238ad5ff00
+$> echo "hello world" | aes --ecb -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+                        openssl enc -aes-128-ecb -d -K d3b07384d113edec49eaa6238ad5ff00
+hello world
+```
+
+### OpenSSL (CBC + IV) encrypt => aes (CBC + IV) decrypt
+```
+$> echo "hello world" | \
+	openssl enc -aes-128-cbc -iv ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+	aes --cbc --hexiv=ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00
+hello world
+```
+
+### aes (CBC + IV) encrypt => OpenSSL (CBC w+ IV) decrypt
+```
+$> echo "hello world" | \
+	aes --cbc --hexiv=ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+	openssl enc -aes-128-cbc -iv ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00
+hello world
+```
+
+### OpenSSL (CTR + IV) encrypt => aes (CTR + IV) decrypt
+```
+$> echo "hello world" | \
+   openssl enc -aes-128-ctr -iv ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+   aes --ctr --hexiv=ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00
+hello world
+```
+
+### aes (CTR + IV) encrypt => OpenSSL (CTR + IV) decrypt
+```
+$> echo "hello world" | \
+   aes --ctr --hexiv=ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+   openssl enc -aes-128-ctr -iv ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00
 hello world
 ```
