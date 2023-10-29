@@ -9,6 +9,7 @@
 ## Command line usage summary
 ```
 Advanced Encryption Standard with NIST tests
+Compatible with OpenSSL options: -aes-[128,192,256]-[ecb,cbc,ctr]
 
 Usage: aes [OPTIONS] <--encrypt|--decrypt> <--ecb|--cbc|--ctr> <--key <key>|--hexkey <hexkey>> [FILE]
 
