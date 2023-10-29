@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 typedef unsigned char uchar;
 
@@ -603,19 +604,23 @@ aesEncrypt(int bits, int esize, const uchar *passkey, const uchar *data, int nby
 void
 aesEncryptCTR(int bits, int esize, const uchar *passkey, const uchar *data, int nbytes, const uchar *iv, uchar *output) {
     unsigned long counter = 0;
+    unsigned long be = 0;
     int n = 0;
     uchar ctrBlock[16];
     uchar outBlocks[32];
 
     if (iv) {
         memcpy(ctrBlock, iv, 8);
-        memcpy(&counter, iv +8, 8);
+        memcpy(&be, iv + 8, 8);
+        be = ntohll(be);
+        memcpy(&counter, &be, 8);
     } else {
         memset(ctrBlock, 0, 8);
     }
 
     while (n < nbytes) {
-        memcpy(ctrBlock + 8, &counter, 8);
+        be = ntohll(counter);
+        memcpy(ctrBlock + 8, &be, 8);
         aesEncrypt(bits, esize, passkey, ctrBlock, 16, ECB, iv, outBlocks);
         for (int i = 0; n < nbytes && i < 16; i++, n++) {
             output[n] = data[n] ^ outBlocks[i];
