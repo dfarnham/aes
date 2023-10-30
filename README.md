@@ -22,9 +22,9 @@ Options:
   -b, --ecb              Cipher is Electronic Codebook
   -c, --cbc              Cipher is Cipher Block Chaining
   -t, --ctr              Cipher is Integer Counter Mode
-      --128              128 bit, defaults to key length when not specified
-      --192              192 bit, defaults to key length when not specified
-      --256              256 bit, defaults to key length when not specified
+      --128
+      --192
+      --256
       --aes-128-ecb
       --aes-128-cbc
       --aes-128-ctr
@@ -34,15 +34,15 @@ Options:
       --aes-256-ecb
       --aes-256-cbc
       --aes-256-ctr
-  -A, --ibase64          Input is Base64
-  -a, --obase64          Output as Base64
-  -X, --ihex             Input is 2-byte hex
-  -x, --ohex             Output as 2-byte hex
-      --nopkcs           Prevents a full pad block being output on --encrypt, skip PKCS#7 pad removal on --decrypt
-  -r, --randiv           Random iv output as first block on --encrypt, treat first block as iv on --decrypt
-      --iv <hexiv>       2-byte hex converted to 16 bytes
   -k, --key <key>        16,24,32 byte passkey
   -K, --hexkey <hexkey>  2-byte hex converted to 16,24,32 byte passkey
+      --iv <hexiv>       2-byte hex converted to 16 bytes
+  -r, --randiv           Random iv output as first block on --encrypt, treat first block as iv on --decrypt
+  -a, --obase64          Output as Base64
+  -A, --ibase64          Input is Base64
+  -x, --ohex             Output as 2-byte hex
+  -X, --ihex             Input is 2-byte hex
+      --nopkcs           Prevents a full pad block being output on --encrypt, skip PKCS#7 pad removal on --decrypt
   -p                     Print the iv/key
   -P                     Print the iv/key and exit
   -q, --quiet            Run quietly, no stderr warnings
