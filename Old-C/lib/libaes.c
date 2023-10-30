@@ -3,6 +3,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#if defined(__linux__)
+#  define ntohll(x) htobe64(x)
+#endif
+
 typedef unsigned char uchar;
 
 #define ENCRYPT 0
