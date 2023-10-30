@@ -1,5 +1,6 @@
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
+use clap::Id;
 use std::error::Error;
 use std::io::{self, Write};
 
@@ -37,16 +38,52 @@ fn main() -> Result<(), Box<dyn Error>> {
     // parse command line arguments
     let args = argparse::get_args();
 
-    // get the cipher mode (ecb, cbc, ctr)
-    let cipher = if args.get_flag("ecb") {
-        Cipher::ECB
-    } else if args.get_flag("cbc") {
-        Cipher::CBC
-    } else if args.get_flag("ctr") {
-        Cipher::CTR
+    // skips stderr warning messages if true
+    let quiet = args.get_flag("quiet");
+
+    // get the argument string for bundled option if present, e.g. --aes-256-cbc
+    let ciph_desc = if let Some(s) = args.get_one::<Id>("aes128") {
+        s.to_string()
+    } else if let Some(s) = args.get_one::<Id>("aes192") {
+        s.to_string()
+    } else if let Some(s) = args.get_one::<Id>("aes256") {
+        s.to_string()
     } else {
-        return Err("missing required: --ecb,cbc,ctr (argparse group failed)".into());
+        "".to_string()
     };
+
+    // set the cipher mode (ecb, cbc, ctr)
+    let cipher = if args.get_flag("ecb") || ciph_desc.contains("ecb") {
+        Cipher::ECB
+    } else if args.get_flag("cbc") || ciph_desc.contains("cbc") {
+        Cipher::CBC
+    } else if args.get_flag("ctr") || ciph_desc.contains("ctr") {
+        Cipher::CTR
+    } else if ciph_desc.is_empty() {
+        return Err("missing cipher: --ecb,cbc,ctr or --aes-{128,192,256}-{ecb,cbc,ctr}".into());
+    } else {
+        return Err("argparse failed".into());
+    };
+
+    // number of bits is specified or derived from key length in get_passkey()
+    let bits_specified = if args.get_flag("128") || ciph_desc.contains("128") {
+        Some(128)
+    } else if args.get_flag("192") || ciph_desc.contains("192") {
+        Some(192)
+    } else if args.get_flag("256") || ciph_desc.contains("256") {
+        Some(256)
+    } else {
+        None
+    };
+
+    // create the 32-byte passkey from the input key
+    // bits is finalized as [128, 192, 256]
+    let (bits, passkey) = get_passkey(
+        bits_specified,
+        args.get_one::<String>("key"),
+        args.get_one::<String>("hexkey"),
+        quiet,
+    )?;
 
     // set the 16-byte initialization vector to random or supplied value
     let randiv: bool = args.get_flag("randiv");
@@ -54,11 +91,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut ivector = get_ivector(
         encrypt && randiv, // randiv and encrypt creates a random iv
         args.get_one::<String>("iv"),
-        args.get_one::<String>("hexiv"),
+        quiet,
     )?;
 
-    // create the 32-byte passkey from the input key, bits is [128, 192, 256]
-    let (bits, passkey) = get_passkey(args.get_one::<String>("key"), args.get_one::<String>("hexkey"))?;
+    // print key, iv
+    if args.get_flag("p") || args.get_flag("P") {
+        eprintln!("AES-{cipher:?}-{bits}");
+        eprintln!("key={}", hex::encode(passkey).to_uppercase());
+        eprintln!("iv ={}", hex::encode(ivector).to_uppercase());
+        if args.get_flag("P") {
+            return Ok(());
+        }
+    }
+
+    // iv will reside in the first block when invoked with --randiv for [CBC, CTR]
+    let randiv_sz = if randiv && cipher != Cipher::ECB { 16 } else { 0 };
 
     // read the input as bytes
     let bytes = read_input_bytes(
@@ -66,9 +113,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         args.get_flag("ibase64"),
         args.get_flag("ihex"),
     )?;
-
-    // iv will reside in the first block when invoked with --randiv for [CBC, CTR]
-    let randiv_sz = if randiv && cipher != Cipher::ECB { 16 } else { 0 };
 
     // =====================
     //   Encrypt / Decrypt
