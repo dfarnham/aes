@@ -104,7 +104,7 @@ $> echo "roundtrip hello world" | \
 roundtrip hello world
 ```
 
-### The following 128-bit examples use 16-byte password
+### The 128-bit examples use a 16-byte password
 ```
 # make a 16 byte password for 128 bit examples
 $> echo foo | md5
