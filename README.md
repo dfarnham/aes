@@ -6,6 +6,7 @@
 * Shooting for clarity and correctness, not optimization
 
 <HR>
+
 ### a byproduct of fun with [cryptopals](https://cryptopals.com/)
 
 <HR>
