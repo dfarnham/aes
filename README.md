@@ -1,11 +1,14 @@
-# aes
+# aes - command line utility
 
-* AES (Advanced Encryption Standard) implementation with NIST tests
+* AES (Advanced Encryption Standard) implementation written in **Rust** with NIST tests
 * Compatible with [OpenSSL options](https://www.openssl.org/): -aes-[128,192,256]-[ecb,cbc,ctr], -pbkdf2, -K, -iv
 * Written as a personal learning exercise using the algorithm [Rijndael_key_schedule](https://en.wikipedia.org/wiki/Rijndael_key_schedule)
 * Shooting for clarity and correctness, not optimization
 
+<HR>
 ### a byproduct of fun with [cryptopals](https://cryptopals.com/)
+
+<HR>
 
 
 ## Command line usage summary
@@ -53,6 +56,11 @@ Options:
   -V, --version          Print version
 ```
 
+### Build and install into ~/.cargo/bin
+```
+$> cargo install --path .
+```
+
 ## NIST Tests
 ```
 $> cargo test -r
@@ -76,16 +84,12 @@ test nist_tests::test_256_ecb_decrypt ... ok
 test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 ```
 
-## Examples
-```
-# make a 16 byte password for 128 bit examples
-$> echo foo | md5
-d3b07384d113edec49eaa6238ad5ff00
-```
+<HR>
+<HR>
 
-## OpenSSL compatible options: --aes-{128,192,256}-{ecb,cbc,ctr}
+## OpenSSL compatible roundtrip examples
 
-### [Password-Based Key Derivation Function-2](https://en.wikipedia.org/wiki/PBKDF2)
+### -pbkdf2 [Password-Based Key Derivation Function-2](https://en.wikipedia.org/wiki/PBKDF2)
 ```
 $> echo "roundtrip hello world" | \
     openssl aes-256-cbc -e -pbkdf2 -k password | \
@@ -98,6 +102,14 @@ $> echo "roundtrip hello world" | \
     openssl aes-256-cbc -d -pbkdf2 -k password
 roundtrip hello world
 ```
+
+### The following 128-bit examples use 16-byte password
+```
+# make a 16 byte password for 128 bit examples
+$> echo foo | md5
+d3b07384d113edec49eaa6238ad5ff00
+```
+<HR>
 
 ### ECB
 ```
