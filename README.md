@@ -2,7 +2,7 @@
 
 * AES (Advanced Encryption Standard) implementation with NIST tests
 * Compatible with [OpenSSL options](https://www.openssl.org/): -aes-[128,192,256]-[ecb,cbc,ctr], -pbkdf2, -K, -iv
-* Written as a personal learning exercise using the algorithm described [Rijndael_key_schedule](https://en.wikipedia.org/wiki/Rijndael_key_schedule)
+* Written as a personal learning exercise using the algorithm [Rijndael_key_schedule](https://en.wikipedia.org/wiki/Rijndael_key_schedule)
 * Shooting for clarity and correctness, not optimization
 
 ### a byproduct of fun with [cryptopals](https://cryptopals.com/)
