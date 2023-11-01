@@ -11,7 +11,7 @@ mod libaes;
 use libaes::{aes_decrypt, aes_encrypt};
 
 mod general;
-use general::{get_ivector, get_passkey, read_input_bytes, reset_sigpipe};
+use general::{get_ivector, get_passkey, get_pbkdf2_keyiv, read_input_bytes, reset_sigpipe};
 
 #[derive(Debug, PartialEq)]
 pub enum Cipher {
@@ -28,6 +28,20 @@ const fn blocks(n: usize) -> usize {
     }
 }
 
+// print cipher details
+fn print_keyiv(cipher: &Cipher, bits: usize, passkey: &[u8; 32], salt: &[u8], ivector: &[u8; 16], pbkdf2: bool) {
+    eprintln!("AES-{cipher:?}-{bits}");
+    if pbkdf2 {
+        eprintln!("salt={}", hex::encode(salt).to_uppercase());
+    }
+    match bits {
+        128 => eprintln!("key={}", hex::encode(&passkey[0..16]).to_uppercase()),
+        192 => eprintln!("key={}", hex::encode(&passkey[0..24]).to_uppercase()),
+        _ => eprintln!("key={}", hex::encode(passkey).to_uppercase()),
+    }
+    eprintln!("iv ={}", hex::encode(ivector).to_uppercase());
+}
+
 // ==============================================================
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -37,6 +51,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // parse command line arguments
     let args = argparse::get_args();
+
+    // Password-Based Key Derivation Function-2 with minimum of 1,000 iterations
+    let pbkdf2: bool = args.get_flag("pbkdf2");
+    let iter = 1_000.max(*args.get_one::<u32>("iter").expect("argparse default"));
 
     // skips stderr warning messages if true
     let quiet = args.get_flag("quiet");
@@ -82,30 +100,25 @@ fn main() -> Result<(), Box<dyn Error>> {
         bits_specified,
         args.get_one::<String>("key"),
         args.get_one::<String>("hexkey"),
-        quiet,
+        quiet || pbkdf2,
     )?;
 
     // set the 16-byte initialization vector to random or supplied value
     let randiv: bool = args.get_flag("randiv");
     let encrypt: bool = args.get_flag("encrypt");
     let mut ivector = get_ivector(
-        encrypt && randiv, // randiv and encrypt creates a random iv
+        encrypt && randiv, // conditions for a random iv
         args.get_one::<String>("iv"),
         quiet,
     )?;
 
-    // print key, iv
-    if args.get_flag("p") || args.get_flag("P") {
-        eprintln!("AES-{cipher:?}-{bits}");
-        eprintln!("key={}", hex::encode(passkey).to_uppercase());
-        eprintln!("iv ={}", hex::encode(ivector).to_uppercase());
-        if args.get_flag("P") {
-            return Ok(());
-        }
-    }
-
     // iv will reside in the first block when invoked with --randiv for [CBC, CTR]
-    let randiv_sz = if randiv && cipher != Cipher::ECB { 16 } else { 0 };
+    // salt will reside in the last 8 bytes of first block when invoked with --pbkdf2 ( b"Salted__xxxxxxxx" )
+    let randiv_sz = if (randiv || pbkdf2) && cipher != Cipher::ECB {
+        16
+    } else {
+        0
+    };
 
     // read the input as bytes
     let bytes = read_input_bytes(
@@ -114,14 +127,43 @@ fn main() -> Result<(), Box<dyn Error>> {
         args.get_flag("ihex"),
     )?;
 
+    if bytes.is_empty() {
+        return Ok(());
+    }
+
     // =====================
     //   Encrypt / Decrypt
     // =====================
     let mut output = vec![];
     if encrypt {
-        // copy the iv to the first block of output
-        if randiv_sz != 0 {
+        // PBKDF2 (Password-Based Key Derivation Function 2)
+        let passkey = match pbkdf2 {
+            true => {
+                let salt: [u8; 8] = rand::random();
+
+                // copy b"Salted__xxxxxxxx" to the first block of output
+                output = b"Salted__".to_vec();
+                output.extend(&salt);
+
+                let (key, iv) = get_pbkdf2_keyiv(bits, &passkey, &salt, iter)?;
+
+                // set ivector, return key
+                ivector = iv;
+                key
+            }
+            false => passkey,
+        };
+
+        // copy the iv to the first block of output unless --pbkdf2
+        if randiv_sz != 0 && !pbkdf2 {
             output = ivector.to_vec();
+        }
+
+        // print cipher details and return
+        if args.get_flag("P") {
+            let salt = if pbkdf2 { &output[8..16] } else { &[0u8; 0] };
+            print_keyiv(&cipher, bits, &passkey, salt, &ivector, pbkdf2);
+            return Ok(());
         }
 
         // add encrypted bytes to output
@@ -132,9 +174,30 @@ fn main() -> Result<(), Box<dyn Error>> {
             output.drain(16 * blocks(bytes.len() + randiv_sz)..);
         }
     } else {
-        // read the iv from the first block of input
+        // read the iv (or salt if --pbkdf2) from the first block of input
         if randiv_sz != 0 {
             ivector.copy_from_slice(&bytes[..16]);
+        }
+
+        // PBKDF2 (Password-Based Key Derivation Function 2)
+        let passkey = match pbkdf2 {
+            true => {
+                // ivector contains the salt, skip over b"Salted__"
+                let salt = &ivector[8..];
+                let (key, iv) = get_pbkdf2_keyiv(bits, &passkey, salt, iter)?;
+
+                // set ivector, return key
+                ivector = iv;
+                key
+            }
+            false => passkey,
+        };
+
+        // print cipher details and return
+        if args.get_flag("P") {
+            let salt = if pbkdf2 { &bytes[8..16] } else { &[0u8; 0] };
+            print_keyiv(&cipher, bits, &passkey, salt, &ivector, pbkdf2);
+            return Ok(());
         }
 
         // add decrypted bytes to output

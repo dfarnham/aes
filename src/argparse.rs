@@ -64,11 +64,15 @@ pub fn get_args() -> ArgMatches {
         .arg(arg!(-K --hexkey <hexkey> "2-byte hex converted to 16,24,32 byte passkey"))
         .group(ArgGroup::new("passkey").args(["key", "hexkey"]).required(true))
 
-        .arg(arg!(--iv <hexiv> "2-byte hex converted to 16 bytes").conflicts_with("randiv"))
+        // Only one of
+        .arg(arg!(--iv <hexiv> "2-byte hex converted to 16 byte iv").conflicts_with_all(["randiv", "pbkdf2"]))
         .arg(
             arg!(-r --randiv "Random iv output as first block on --encrypt, treat first block as iv on --decrypt")
-                .conflicts_with_all(["iv", "hexiv"]),
+                .conflicts_with_all(["iv", "pbkdf2"]),
         )
+        .arg(arg!(--pbkdf2 "Use password-based key derivation function 2 (PBKDF2)").conflicts_with_all(["iv", "randiv"]))
+
+        .arg(arg!(--iter <iter> "iterations for PBKDF2").value_parser(value_parser!(u32)).default_value("10000"))
 
         .arg(arg!(-a --obase64 "Output as Base64").conflicts_with("ohex"))
         .arg(arg!(-A --ibase64 "Input is Base64").conflicts_with("ihex"))
@@ -76,10 +80,9 @@ pub fn get_args() -> ArgMatches {
         .arg(arg!(-x --ohex "Output as 2-byte hex").conflicts_with("obase64"))
         .arg(arg!(-X --ihex "Input is 2-byte hex").conflicts_with("ibase64"))
 
-        .arg(arg!(--nopkcs "Prevents a full pad block being output on --encrypt, skip PKCS#7 pad removal on --decrypt"))
+        .arg(arg!(--nopkcs "Prevent a full pad block on --encrypt, skip PKCS#7 pad removal on --decrypt"))
 
-        .arg(arg!(p: -p "Print the iv/key"))
-        .arg(arg!(P: -P "Print the iv/key and exit"))
+        .arg(arg!(P: -P "Print the salt/key/iv and exit"))
 
         .arg(arg!(-q --quiet "Run quietly, no stderr warnings"))
 

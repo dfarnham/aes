@@ -1,7 +1,7 @@
 [package]
 authors = ["Dave Farnham <dave.farnham@icloud.com>"]
 name = "aes"
-description = "Advanced Encryption Standard with NIST tests\nCompatible with OpenSSL options: -aes-[128,192,256]-[ecb,cbc,ctr]"
+description = "Advanced Encryption Standard with NIST tests\nCompatible with OpenSSL options: -aes-[128,192,256]-[ecb,cbc,ctr], -pbkdf2, -K, -iv"
 readme = "README.md"
 repository = "https://github.com/dfarnham/aes"
 keywords = ["encryption", "aes"]
@@ -20,4 +20,6 @@ anyhow = "1"
 base64 = "0.21"
 clap = { version = "4", features = ["cargo", "derive"] }
 hex = "0.4.3"
+pbkdf2 = "0.12.2"
 rand = "0.8.5"
+sha2 = "0.10.8"

@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
 use base64::{engine::general_purpose, Engine as _};
+use pbkdf2::pbkdf2_hmac_array;
+use sha2::Sha256;
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, Read};
@@ -43,6 +45,27 @@ pub fn get_ivector(random: bool, iv: Option<&String>, quiet: bool) -> Result<[u8
     }
 
     Ok(ivector)
+}
+
+// PBKDF2
+// returns a 32-byte passkey and 16-byte initialization vector
+pub fn get_pbkdf2_keyiv(
+    bits: usize,
+    pass: &[u8],
+    salt: &[u8],
+    iter: u32,
+) -> Result<([u8; 32], [u8; 16]), Box<dyn Error>> {
+    // generate enough bits for all cases [128, 192, 256]
+    let key = pbkdf2_hmac_array::<Sha256, 48>(pass, salt, iter);
+
+    // Note: we could clear unused bits for clarity but not necessary
+    // 128: key[16..32].copy_from_slice(&[0u8; 16])
+    // 192: key[24..32].copy_from_slice(&[0u8; 8])
+    Ok(match bits {
+        128 => (key[..32].try_into()?, key[16..32].try_into()?),
+        192 => (key[..32].try_into()?, key[24..40].try_into()?),
+        _ => (key[..32].try_into()?, key[32..].try_into()?),
+    })
 }
 
 // returns number of encryption bits and a 32-byte passkey
