@@ -62,7 +62,7 @@ Options:
 $> cargo install --path .
 ```
 
-## NIST Tests
+## NIST [Validation](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program) Vector Tests
 ```
 $> cargo test -r
     Finished release [optimized] target(s) in 0.02s
