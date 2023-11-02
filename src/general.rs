@@ -116,7 +116,7 @@ pub fn get_passkey(
 
     // copy key into a 32 byte passkey
     let mut passkey = [0u8; 32];
-    let nbytes = 32.min(key.len());
+    let nbytes = 32.min(key.len().min(bits / 8));
     passkey[..nbytes].copy_from_slice(&key[..nbytes]);
 
     Ok((bits, passkey))
