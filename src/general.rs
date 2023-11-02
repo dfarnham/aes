@@ -25,7 +25,7 @@ pub fn reset_sigpipe() -> Result<(), Box<dyn Error>> {
 
 // 16-byte initialization vector (random, or bytes from 2-byte hex)
 pub fn get_ivector(random: bool, iv: Option<&String>, quiet: bool) -> Result<[u8; 16], Box<dyn Error>> {
-    let mut ivector = [0; 16];
+    let mut ivector = [0u8; 16];
 
     if random {
         ivector = rand::random();
@@ -115,7 +115,7 @@ pub fn get_passkey(
     }
 
     // copy key into a 32 byte passkey
-    let mut passkey: [u8; 32] = [0; 32];
+    let mut passkey = [0u8; 32];
     let nbytes = 32.min(key.len());
     passkey[..nbytes].copy_from_slice(&key[..nbytes]);
 
