@@ -453,7 +453,7 @@ fn aes_ctr(bits: usize, passkey: &[u8], data: &[u8], iv: &[u8; 16]) -> Vec<u8> {
     let nbytes = data.len();
     let mut output = vec![0; nbytes];
     let mut n = 0;
-    let mut ctr_block: [u8; 16] = [0; 16];
+    let mut ctr_block = [0u8; 16];
     let mut counter: u64 = u64::from_be_bytes(iv[8..].try_into().expect("from_be_bytes"));
 
     ctr_block[..8].copy_from_slice(&iv[..8]);
@@ -489,7 +489,7 @@ fn aes_ctr(bits: usize, passkey: &[u8], data: &[u8], iv: &[u8; 16]) -> Vec<u8> {
 fn aes_cipher_encrypt(bits: usize, passkey: &[u8], data: &[u8], cipher: &Cipher, iv: &[u8; 16]) -> Vec<u8> {
     let nbytes = data.len();
     let mut output = vec![];
-    let mut state: [[u8; 4]; 4] = [[0; 4]; 4];
+    let mut state = [[0u8; 4]; 4];
 
     let (esize, cycles) = match bits {
         128 => (176, 10),
@@ -604,7 +604,7 @@ fn aes_cipher_encrypt(bits: usize, passkey: &[u8], data: &[u8], cipher: &Cipher,
 fn aes_cipher_decrypt(bits: usize, passkey: &[u8], data: &[u8], cipher: &Cipher, iv: &[u8; 16]) -> Vec<u8> {
     let nbytes = data.len();
     let mut output = vec![];
-    let mut state: [[u8; 4]; 4] = [[0; 4]; 4];
+    let mut state = [[0u8; 4]; 4];
 
     let mut cipher_text: [u8; 16] = match cipher == &Cipher::CBC {
         true => *iv,
