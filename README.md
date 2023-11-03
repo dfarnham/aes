@@ -2,9 +2,9 @@
 
 [Latest Version]: https://img.shields.io/badge/aes-v.1.1.0-green
 
-* AES (Advanced Encryption Standard) implementation written in **Rust** with NIST tests
+* AES (Advanced Encryption Standard) implementation written in [Rust](https://www.rust-lang.org/) with [NIST validation tests](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program)
 * Compatible with [OpenSSL options](https://www.openssl.org/): -aes-[128,192,256]-[ecb,cbc,ctr], -pbkdf2, -K, -iv
-* Written as a personal learning exercise using the algorithm [Rijndael_key_schedule](https://en.wikipedia.org/wiki/Rijndael_key_schedule)
+* Written as a personal learning exercise following the algorithm [Rijndael Key Schedule](https://en.wikipedia.org/wiki/Rijndael_key_schedule)
 * Shooting for clarity and correctness, not optimization
 
 <HR>
