@@ -9,7 +9,7 @@
 
 <HR>
 
-### a byproduct of fun with [cryptopals](https://cryptopals.com/)
+### • byproduct of fun with [cryptopals](https://cryptopals.com/)
 
 <HR>
 
