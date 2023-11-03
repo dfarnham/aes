@@ -22,7 +22,7 @@ pub fn reset_sigpipe() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Read bytes from a file or stdin and decoded from Base-64 or 2-byte Hex
+// Read bytes from a file or stdin and decode from Base-64 or 2-byte Hex
 pub fn read_input_bytes(file: Option<&PathBuf>, b64: bool, hex: bool) -> Result<Vec<u8>, Box<dyn Error>> {
     let file = match file {
         Some(file) => file.clone(),
@@ -128,7 +128,7 @@ pub fn get_passkey32(
         return Err("missing required: --key,hexkey (argparse failed)".into());
     };
 
-    // If bits is None derive from the key length
+    // Derive from the key length when bits is None
     let bits = match bits {
         Some(n) => n,
         None => match keylen {

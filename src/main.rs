@@ -4,7 +4,7 @@ use clap::Id;
 use std::error::Error;
 use std::io::{self, Write};
 
-// clap arg parser
+// Clap arg parser
 mod argparse;
 
 // AES algorithms
