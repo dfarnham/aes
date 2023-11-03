@@ -1,4 +1,6 @@
-# aes - command line utility
+# aes - Command line utility ![Latest Version]
+
+[Latest Version]: https://img.shields.io/badge/aes-v.1.1.0-green
 
 * AES (Advanced Encryption Standard) implementation written in **Rust** with NIST tests
 * Compatible with [OpenSSL options](https://www.openssl.org/): -aes-[128,192,256]-[ecb,cbc,ctr], -pbkdf2, -K, -iv
