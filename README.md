@@ -11,7 +11,6 @@
 
 <HR>
 
-
 ## Command line usage summary
 ```
 Advanced Encryption Standard with NIST tests
@@ -45,6 +44,7 @@ Options:
       --iv <hexiv>       2-byte hex converted to 16 byte iv
   -r, --randiv           Random iv output as first block on --encrypt, treat first block as iv on --decrypt
       --pbkdf2           Use password-based key derivation function 2 (PBKDF2)
+      --argon2           Use password-based key derivation Argon2id
       --iter <iter>      iterations for PBKDF2 [default: 10000]
   -a, --obase64          Output as Base64
   -A, --ibase64          Input is Base64
