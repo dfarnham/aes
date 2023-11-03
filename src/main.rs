@@ -96,7 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // 1. Create a 32-byte passkey from the input key
     // 2. Bits is finalized as [128, 192, 256]
-    // Note: if a KDF is being used the final passkey will be created from this one + salt
+    // Note: if a KDF is specified the final passkey will be created from this passkey + salt
     let (bits, passkey) = get_passkey32(
         bits_specified,
         args.get_one::<String>("key"),
@@ -123,7 +123,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         0
     };
 
-    // Read the input as bytes and perform Base-64/Hex translations as needed
+    // Read the input as bytes and perform any Base-64/Hex decodings
     let bytes = read_input_bytes(
         args.get_one::<std::path::PathBuf>("FILE"),
         args.get_flag("ibase64"),
