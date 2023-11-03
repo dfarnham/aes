@@ -21,6 +21,16 @@ digest() {
 }
 
 expected=`echo "roundtrip hello world" | /usr/bin/shasum | cut -c1-40`
+# ARGON2
+digest "$expected" "`echo "$text" | \
+    aes --aes-128-cbc -e --argon2 -k password | \
+    aes --aes-128-cbc -d --argon2 -k password`"
+digest "$expected" "`echo "$text" | \
+    aes --aes-192-cbc -e --argon2 -k password | \
+    aes --aes-192-cbc -d --argon2 -k password`"
+digest "$expected" "`echo "$text" | \
+    aes --aes-256-cbc -e --argon2 -k password | \
+    aes --aes-256-cbc -d --argon2 -k password`"
 
 # PBKDF2
 digest "$expected" "`echo "$text" | \

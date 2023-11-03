@@ -65,27 +65,35 @@ pub fn get_args() -> ArgMatches {
         .group(ArgGroup::new("passkey").args(["key", "hexkey"]).required(true))
 
         // Only one of
-        .arg(arg!(--iv <hexiv> "2-byte hex converted to 16 byte iv").conflicts_with_all(["randiv", "pbkdf2"]))
+        .arg(arg!(--iv <hexiv> "2-byte hex converted to 16 byte iv").conflicts_with_all(["randiv", "pbkdf2", "argon2"]))
         .arg(
             arg!(-r --randiv "Random iv output as first block on --encrypt, treat first block as iv on --decrypt")
-                .conflicts_with_all(["iv", "pbkdf2"]),
+                .conflicts_with_all(["iv", "pbkdf2", "argon2"]),
         )
-        .arg(arg!(--pbkdf2 "Use password-based key derivation function 2 (PBKDF2)").conflicts_with_all(["iv", "randiv"]))
+        .arg(arg!(--pbkdf2 "Use password-based key derivation function 2 (PBKDF2)").conflicts_with_all(["iv", "randiv", "argon2"]))
+        .arg(arg!(--argon2 "Use password-based key derivation Argon2id").conflicts_with_all(["iv", "randiv", "pbkdf2"]))
 
+        // defaults to 10,000
         .arg(arg!(--iter <iter> "iterations for PBKDF2").value_parser(value_parser!(u32)).default_value("10000"))
 
+        // Base-64
         .arg(arg!(-a --obase64 "Output as Base64").conflicts_with("ohex"))
         .arg(arg!(-A --ibase64 "Input is Base64").conflicts_with("ihex"))
 
+        // Hex
         .arg(arg!(-x --ohex "Output as 2-byte hex").conflicts_with("obase64"))
         .arg(arg!(-X --ihex "Input is 2-byte hex").conflicts_with("ibase64"))
 
+        // PKCS#7
         .arg(arg!(--nopkcs "Prevent a full pad block on --encrypt, skip PKCS#7 pad removal on --decrypt"))
 
+        // Output cipher details to stderr
         .arg(arg!(P: -P "Print the salt/key/iv and exit"))
 
+        // Supress warnings
         .arg(arg!(-q --quiet "Run quietly, no stderr warnings"))
 
+        // Input
         .arg(
             arg!(<FILE> "File to read, treats '-' as standard input")
                 .required(false)

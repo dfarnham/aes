@@ -1,28 +1,51 @@
 use super::*;
-use crate::general::{get_ivector, get_passkey, get_pbkdf2_keyiv};
+use crate::general::{get_ivector, get_passkey32};
 use crate::libaes::aes_decrypt;
-use crate::Cipher;
+use crate::{Cipher, Kdf};
 use hex_literal::hex;
 
 #[test]
 fn test_pbkdf2() -> Result<(), Box<dyn Error>> {
     // 128
-    let (key, iv) = get_pbkdf2_keyiv(128, b"Password", b"NaCl", 80_000)?;
+    let (key, iv) = Kdf::PBKDF2(80_000).keyiv(128, b"Password", b"NaCl")?;
     assert_eq!(&key[..16], hex!("4ddcd8f60b98be21830cee5ef22701f9"));
     assert_eq!(iv, hex!("641a4418d04c0414aeff08876b34ab56"));
 
     // 192
-    let (key, iv) = get_pbkdf2_keyiv(192, b"Password", b"NaCl", 80_000)?;
+    let (key, iv) = Kdf::PBKDF2(80_000).keyiv(192, b"Password", b"NaCl")?;
     assert_eq!(&key[..24], hex!("4ddcd8f60b98be21830cee5ef22701f9641a4418d04c0414"));
     assert_eq!(iv, hex!("aeff08876b34ab56a1d425a122583354"));
 
     // 256
-    let (key, iv) = get_pbkdf2_keyiv(256, b"Password", b"NaCl", 80_000)?;
+    let (key, iv) = Kdf::PBKDF2(80_000).keyiv(256, b"Password", b"NaCl")?;
     assert_eq!(
         key,
         hex!("4ddcd8f60b98be21830cee5ef22701f9641a4418d04c0414aeff08876b34ab56")
     );
     assert_eq!(iv, hex!("a1d425a1225833549adb841b51c9b317"));
+
+    Ok(())
+}
+
+#[test]
+fn test_argon2() -> Result<(), Box<dyn Error>> {
+    // 128
+    let (key, iv) = Kdf::ARGON2.keyiv(128, b"Password", b"saltydog")?;
+    assert_eq!(&key[..16], hex!("e997d0e202dd32d6fa8379dfcf65e337"));
+    assert_eq!(iv, hex!("7dd5ae2a37c62f11b04f5aacc02fccb0"));
+
+    // 192
+    let (key, iv) = Kdf::ARGON2.keyiv(192, b"Password", b"saltydog")?;
+    assert_eq!(&key[..24], hex!("e997d0e202dd32d6fa8379dfcf65e3377dd5ae2a37c62f11"));
+    assert_eq!(iv, hex!("b04f5aacc02fccb080b5df4bbe34cbfc"));
+
+    // 256
+    let (key, iv) = Kdf::ARGON2.keyiv(256, b"Password", b"saltydog")?;
+    assert_eq!(
+        key,
+        hex!("e997d0e202dd32d6fa8379dfcf65e3377dd5ae2a37c62f11b04f5aacc02fccb0")
+    );
+    assert_eq!(iv, hex!("80b5df4bbe34cbfc000245ab198ad87f"));
 
     Ok(())
 }
@@ -57,7 +80,7 @@ fn test_get_ivector_panic() {
 fn test_get_passkey() -> Result<(), Box<dyn Error>> {
     let quiet = true;
 
-    // pub fn get_passkey(
+    // pub fn get_passkey32(
     //     bits: Option<usize>,
     //     key: Option<&String>,
     //     hexkey: Option<&String>,
@@ -65,7 +88,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
 
     // 128 - derived
     let hexkey = "abcdef".to_string();
-    let (bits, passkey) = get_passkey(None, None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(None, None, Some(&hexkey), quiet)?;
     assert!(bits == 128 && hexkey.len() < 32);
     assert_eq!(
         passkey,
@@ -73,7 +96,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
     );
 
     let hexkey = "abcdef0123456789ABCDEF0123456789".to_string();
-    let (bits, passkey) = get_passkey(None, None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(None, None, Some(&hexkey), quiet)?;
     assert!(bits == 128 && hexkey.len() == 32);
     assert_eq!(
         passkey,
@@ -82,7 +105,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
 
     // 192 - derived
     let hexkey = "abcdef0123456789ABCDEF0123456789a".to_string();
-    let (bits, passkey) = get_passkey(None, None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(None, None, Some(&hexkey), quiet)?;
     assert!(bits == 192 && hexkey.len() > 32 && hexkey.len() <= 48);
     assert_eq!(
         passkey,
@@ -90,7 +113,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
     );
 
     let hexkey = "abcdef0123456789abcdef0123456789ABCdef0123456789".to_string();
-    let (bits, passkey) = get_passkey(None, None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(None, None, Some(&hexkey), quiet)?;
     assert!(bits == 192 && hexkey.len() == 48);
     assert_eq!(
         passkey,
@@ -99,7 +122,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
 
     // 256 - derived
     let hexkey = "abcdef0123456789ABCDEF0123456789abcdef0123456789abcdef0123456789".to_string();
-    let (bits, passkey) = get_passkey(None, None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(None, None, Some(&hexkey), quiet)?;
     assert!(bits == 256 && hexkey.len() == 64);
     assert_eq!(
         passkey,
@@ -107,7 +130,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
     );
 
     let hexkey = "abcdef0123456789ABCDEF0123456789abcdef0123456789abcdef0123456789ab".to_string();
-    let (bits, passkey) = get_passkey(None, None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(None, None, Some(&hexkey), quiet)?;
     assert!(bits == 256 && hexkey.len() > 64);
     assert_eq!(
         passkey,
@@ -116,7 +139,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
 
     // 128 - explicit
     let hexkey = "abcdef".to_string();
-    let (bits, passkey) = get_passkey(Some(128), None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(Some(128), None, Some(&hexkey), quiet)?;
     assert!(bits == 128 && hexkey.len() < 32);
     assert_eq!(
         passkey,
@@ -124,7 +147,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
     );
 
     let hexkey = "abcdef0123456789ABCDEF0123456789abcdef0123456789abcdef0123456789".to_string();
-    let (bits, passkey) = get_passkey(Some(128), None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(Some(128), None, Some(&hexkey), quiet)?;
     assert!(bits == 128 && hexkey.len() > 32);
     assert_eq!(
         passkey,
@@ -133,7 +156,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
 
     // 192 - explicit
     let hexkey = "abcdef0123456789ABCDEF0123456789abcd".to_string();
-    let (bits, passkey) = get_passkey(Some(192), None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(Some(192), None, Some(&hexkey), quiet)?;
     assert!(bits == 192 && hexkey.len() < 48);
     assert_eq!(
         passkey,
@@ -141,7 +164,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
     );
 
     let hexkey = "abcdef0123456789ABCDEF0123456789abcdef0123456789abcdef0123456789".to_string();
-    let (bits, passkey) = get_passkey(Some(192), None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(Some(192), None, Some(&hexkey), quiet)?;
     assert!(bits == 192 && hexkey.len() > 48);
     assert_eq!(
         passkey,
@@ -150,7 +173,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
 
     // 256 - explicit
     let hexkey = "abcdef0123456789ABCDEF0123456789abcdef0123456789abcdef0123456789".to_string();
-    let (bits, passkey) = get_passkey(Some(256), None, Some(&hexkey), quiet)?;
+    let (bits, passkey) = get_passkey32(Some(256), None, Some(&hexkey), quiet)?;
     assert!(bits == 256 && hexkey.len() == 64);
     assert_eq!(
         passkey,
@@ -159,7 +182,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
 
     // 128 - derived - ascii key
     let key = "R&D".to_string();
-    let (bits, passkey) = get_passkey(None, Some(&key), None, quiet)?;
+    let (bits, passkey) = get_passkey32(None, Some(&key), None, quiet)?;
     assert!(bits == 128);
     assert_eq!(
         passkey,
@@ -167,7 +190,7 @@ fn test_get_passkey() -> Result<(), Box<dyn Error>> {
     );
 
     let key = "Allman Brothers!".to_string();
-    let (bits, passkey) = get_passkey(None, Some(&key), None, quiet)?;
+    let (bits, passkey) = get_passkey32(None, Some(&key), None, quiet)?;
     assert!(bits == 128);
     assert_eq!(
         passkey,
@@ -261,7 +284,7 @@ Play that funky music
     let b64_encoded = true;
     let msg = read_input_bytes(Some(&std::path::PathBuf::from("src/tests/cp7.txt")), b64_encoded, false)?;
     let hexkey = "59454c4c4f57205355424d4152494e45".to_string();
-    let (bits, passkey) = get_passkey(None, None, Some(&hexkey), true)?;
+    let (bits, passkey) = get_passkey32(None, None, Some(&hexkey), true)?;
     let out = aes_decrypt(bits, &passkey, &msg, &Cipher::ECB, &[0u8; 16]);
     // aes_decrypt() doesn't perform pad char removal, so test up to the length of expected
     assert_eq!(out[..(expected.len())].to_vec(), expected);
