@@ -64,7 +64,7 @@ $> cargo install --path .
 
 ## NIST [Validation](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program) Vector Tests
 ```
-$> cargo test -r
+$> cargo test -r nist_tests
     Finished release [optimized] target(s) in 0.02s
      Running unittests src/main.rs (target/release/deps/aes-029949ef7c38b21b)
 
