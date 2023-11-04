@@ -65,7 +65,7 @@ pub fn get_args() -> ArgMatches {
         .group(ArgGroup::new("passkey").args(["key", "hexkey"]).required(true))
 
         // Only one of
-        .arg(arg!(--iv <hexiv> "2-byte hex converted to 16 byte iv").conflicts_with("randiv"))
+        .arg(arg!(--iv <hexiv> "2-byte hex converted to 16 byte iv (or salt with --pbkdf2, --argon2)").conflicts_with("randiv"))
         .arg(
             arg!(-r --randiv "Random iv output as 1st block on --encrypt, treat 1st block as iv on --decrypt")
                 .conflicts_with("iv"),
