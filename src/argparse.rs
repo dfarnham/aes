@@ -65,13 +65,15 @@ pub fn get_args() -> ArgMatches {
         .group(ArgGroup::new("passkey").args(["key", "hexkey"]).required(true))
 
         // Only one of
-        .arg(arg!(--iv <hexiv> "2-byte hex converted to 16 byte iv").conflicts_with_all(["randiv", "pbkdf2", "argon2"]))
+        .arg(arg!(--iv <hexiv> "2-byte hex converted to 16 byte iv").conflicts_with("randiv"))
         .arg(
             arg!(-r --randiv "Random iv output as 1st block on --encrypt, treat 1st block as iv on --decrypt")
-                .conflicts_with_all(["iv", "pbkdf2", "argon2"]),
+                .conflicts_with("iv"),
         )
-        .arg(arg!(--pbkdf2 "Use password-based key derivation function 2 (PBKDF2)").conflicts_with_all(["iv", "randiv", "argon2"]))
-        .arg(arg!(--argon2 "Use password-based key derivation Argon2id").conflicts_with_all(["iv", "randiv", "pbkdf2"]))
+
+        // Only one of
+        .arg(arg!(--pbkdf2 "Use password-based key derivation function 2 (PBKDF2)").conflicts_with("argon2"))
+        .arg(arg!(--argon2 "Use password-based key derivation Argon2id").conflicts_with("pbkdf2"))
 
         // defaults to 10,000
         .arg(arg!(--iter <iter> "iterations for PBKDF2").value_parser(value_parser!(u32)).default_value("10000"))

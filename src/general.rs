@@ -1,4 +1,3 @@
-use crate::Cipher;
 use anyhow::{Context, Result};
 use base64::{engine::general_purpose, Engine as _};
 use std::error::Error;
@@ -62,28 +61,12 @@ pub fn read_input_bytes(file: Option<&PathBuf>, b64: bool, hex: bool) -> Result<
     Ok(bytes)
 }
 
-// Output cipher details to stderr
-pub fn print_cipher_info(cipher: &Cipher, bits: usize, passkey: &[u8; 32], salt: &[u8], ivector: &[u8; 16]) {
-    eprintln!("AES-{cipher:?}-{bits}");
-    if salt.iter().sum::<u8>() != 0 {
-        eprintln!("salt={}", hex::encode(salt).to_uppercase());
-    }
-    match bits {
-        128 => eprintln!("key={}", hex::encode(&passkey[0..16]).to_uppercase()),
-        192 => eprintln!("key={}", hex::encode(&passkey[0..24]).to_uppercase()),
-        _ => eprintln!("key={}", hex::encode(passkey).to_uppercase()),
-    }
-    eprintln!("iv ={}", hex::encode(ivector).to_uppercase());
-}
-
 // 16-byte initialization vector (random, or bytes from 2-byte hex)
 // Warn on short/long conversions
 pub fn get_ivector(random: bool, iv: Option<&String>, quiet: bool) -> Result<[u8; 16], Box<dyn Error>> {
     let mut ivector = [0u8; 16];
 
-    if random {
-        ivector = rand::random();
-    } else if let Some(hexiv) = iv {
+    if let Some(hexiv) = iv {
         if !quiet && hexiv.len() < 32 {
             eprintln!("hex iv is too short, padding with zero bytes");
         } else if !quiet && hexiv.len() > 32 {
@@ -96,6 +79,8 @@ pub fn get_ivector(random: bool, iv: Option<&String>, quiet: bool) -> Result<[u8
         let iv = hex::decode(hexiv).with_context(|| "hex::decode(hexiv)")?;
         let nbytes = 16.min(iv.len());
         ivector[..nbytes].copy_from_slice(&iv[..nbytes]);
+    } else if random {
+        ivector = rand::random();
     }
 
     Ok(ivector)

@@ -152,3 +152,25 @@ if [ "$expected" != "$computed" ]; then
 else
     echo pass
 fi
+
+# salt in openssl -pbkdf2 is the last 8 bytes of 1st block
+#
+# use aes --vi to set the salt, verify with openssl -P
+salt=`echo foo | aes --aes-256-cbc -e --pbkdf2 -k password --iv 0000000000000000abcdef0123456789 | openssl aes-256-cbc -P -d -pbkdf2 -k password | head -1`
+if [ "$salt" = "salt=ABCDEF0123456789" ]; then
+    echo "pass: setting --pbkdf2 salt to ABCDEF0123456789 using --iv 0000000000000000abcdef0123456789"
+else
+    echo "failed to set --pbkdf2 salt to ABCDEF0123456789"
+    exit 1
+fi
+
+# salt in --argon2 is 16 bytes
+#
+# explicitly supply an iv to show this
+salt=`echo foo | aes -P --aes-256-cbc -e --argon2 -k password --iv abcdef01234567899876543210fedcba 2>&1 | grep salt=`
+if [ "$salt" = "salt=ABCDEF01234567899876543210FEDCBA" ]; then
+    echo "pass: setting --argon2 salt to ABCDEF01234567899876543210FEDCBA using --iv abcdef01234567899876543210fedcba"
+else
+    echo "failed to set --argon2 salt to ABCDEF01234567899876543210FEDCBA"
+    exit 1
+fi

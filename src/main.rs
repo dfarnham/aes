@@ -17,7 +17,7 @@ use kdf::Kdf;
 
 // Utility functions
 mod general;
-use general::{get_ivector, get_passkey32, print_cipher_info, read_input_bytes, reset_sigpipe};
+use general::{get_ivector, get_passkey32, read_input_bytes, reset_sigpipe};
 
 // Cipher type
 #[derive(Debug, PartialEq)]
@@ -134,57 +134,88 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Step 1 - Obtain the ivector and passkey, r/w block-1
     //
     // Note: iv resides in the 1st block when invoked with --randiv for [CBC, CTR],
-    //       salt resides in the last 8 bytes of the 1st block when using a KDF
+    //       salt is the last 8 bytes of the 1st block when using --pbkdf2
+    //       salt is the 1st block when using --argon2
     // ============================================================================
     let mut ivector = get_ivector(
-        encrypt && randiv, // conditions for a random iv
-        args.get_one::<String>("iv"),
-        quiet, // squelch warnings re short/truncated keys?
+        encrypt && (randiv || kdf.is_some()), // conditions for a random iv
+        args.get_one::<String>("iv"),         // supplied iv
+        quiet,                                // squelch warnings re short/truncated keys?
     )?;
     let (passkey, ivector) = match encrypt {
         true => match kdf {
             Some(ref hasher) => {
-                // Copy b"Salted__xxxxxxxx" to the 1st block of output
-                let salt: [u8; 8] = rand::random();
-                output = b"Salted__".to_vec();
-                output.extend(&salt);
-                hasher.keyiv(bits, &passkey, &salt)?
+                match hasher {
+                    Kdf::PBKDF2(_) => {
+                        let salt: [u8; 8] = ivector[8..].try_into()?;
+                        // Copy b"Salted__xxxxxxxx" to the 1st block of output
+                        output.extend(b"Salted__");
+                        output.extend(&salt);
+                        hasher.keyiv(bits, &passkey, &salt)?
+                    }
+                    Kdf::ARGON2 => {
+                        // Copy ivector to the 1st block of output
+                        output.extend(&ivector);
+                        hasher.keyiv(bits, &passkey, &ivector)?
+                    }
+                }
             }
             None => {
                 // Copy the ivector to the 1st block of output
                 if first_block_sz > 0 {
-                    output = ivector.to_vec();
+                    output.extend(&ivector);
                 }
                 (passkey, ivector)
             }
         },
         false => {
-            // Read the iv (or salt) from the 1st block of input
+            // Read the iv (or salt for kdf's) from the 1st block of input
             if first_block_sz > 0 {
                 ivector.copy_from_slice(&bytes[..16]);
             }
             match kdf {
                 Some(ref hasher) => {
-                    // ivector contains the salt, skip over b"Salted__"
-                    let salt = &ivector[8..];
-                    hasher.keyiv(bits, &passkey, salt)?
+                    match hasher {
+                        // ivector contains the salt, skip over b"Salted__"
+                        Kdf::PBKDF2(_) => hasher.keyiv(bits, &passkey, &ivector[8..])?,
+                        Kdf::ARGON2 => hasher.keyiv(bits, &passkey, &ivector)?,
+                    }
                 }
                 None => (passkey, ivector),
             }
         }
     };
 
+    // Option -P prints cipher details to stderr and returns
+    if args.get_flag("P") {
+        let block = match encrypt {
+            true => output,
+            false => bytes,
+        };
+
+        eprintln!("AES-{cipher:?}-{bits}");
+
+        if let Some(ref hasher) = kdf {
+            match hasher {
+                Kdf::PBKDF2(_) => eprintln!("salt={}", hex::encode(&block[8..16]).to_uppercase()),
+                Kdf::ARGON2 => eprintln!("salt={}", hex::encode(&block[..16]).to_uppercase()),
+            }
+        }
+
+        match bits {
+            128 => eprintln!("key={}", hex::encode(&passkey[0..16]).to_uppercase()),
+            192 => eprintln!("key={}", hex::encode(&passkey[0..24]).to_uppercase()),
+            _ => eprintln!("key={}", hex::encode(passkey).to_uppercase()),
+        }
+
+        eprintln!("iv ={}", hex::encode(ivector).to_uppercase());
+        return Ok(());
+    }
+
     // =================================================
     // Step 2 - Encrypt / Decrypt and handle final block
     // =================================================
     if encrypt {
-        // Print cipher details to stderr and return
-        if args.get_flag("P") {
-            let salt = if kdf.is_some() { &output[8..16] } else { &[0u8; 0] };
-            print_cipher_info(&cipher, bits, &passkey, salt, &ivector);
-            return Ok(());
-        }
-
         // Add encrypted bytes to output
         output.extend(aes_encrypt(bits, &passkey, &bytes, &cipher, &ivector));
 
@@ -193,13 +224,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             output.drain(16 * blocks(bytes.len() + first_block_sz)..);
         }
     } else {
-        // Print cipher details to stderr and return
-        if args.get_flag("P") {
-            let salt = if kdf.is_some() { &bytes[8..16] } else { &[0u8; 0] };
-            print_cipher_info(&cipher, bits, &passkey, salt, &ivector);
-            return Ok(());
-        }
-
         // Add decrypted bytes to output
         output.extend(aes_decrypt(bits, &passkey, &bytes[first_block_sz..], &cipher, &ivector));
 
