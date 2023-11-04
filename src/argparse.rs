@@ -13,8 +13,8 @@ pub fn get_args() -> ArgMatches {
         .max_term_width(100)
 
         // Only one of, required
-        .arg(arg!(-e --encrypt "Encrypt"))
-        .arg(arg!(-d --decrypt "Decrypt"))
+        .arg(arg!(-e --encrypt "Encrypt mode"))
+        .arg(arg!(-d --decrypt "Decrypt mode"))
         .group(ArgGroup::new("cryptmode").args(["encrypt", "decrypt"]).required(true))
 
         // Only one of
@@ -24,15 +24,15 @@ pub fn get_args() -> ArgMatches {
         .group(ArgGroup::new("cipher").args(["ecb", "cbc", "ctr"]).required(false))
 
         // Only one of
-        .arg(arg!(--"128").conflicts_with_all(["aes128", "aes192", "aes256"]))
-        .arg(arg!(--"192").conflicts_with_all(["aes128", "aes192", "aes256"]))
-        .arg(arg!(--"256").conflicts_with_all(["aes128", "aes192", "aes256"]))
+        .arg(arg!(--"128" "Key size" ).conflicts_with_all(["aes128", "aes192", "aes256"]))
+        .arg(arg!(--"192" "Key size").conflicts_with_all(["aes128", "aes192", "aes256"]))
+        .arg(arg!(--"256" "Key size").conflicts_with_all(["aes128", "aes192", "aes256"]))
         .group(ArgGroup::new("bits").args(["128", "192", "256"]).required(false))
 
         // Only one of
-        .arg(arg!(--"aes-128-ecb").conflicts_with_all(["aes192", "aes256"]))
-        .arg(arg!(--"aes-128-cbc").conflicts_with_all(["aes192", "aes256"]))
-        .arg(arg!(--"aes-128-ctr").conflicts_with_all(["aes192", "aes256"]))
+        .arg(arg!(--"aes-128-ecb" "Key size and cipher").conflicts_with_all(["aes192", "aes256"]))
+        .arg(arg!(--"aes-128-cbc" "Key size and cipher").conflicts_with_all(["aes192", "aes256"]))
+        .arg(arg!(--"aes-128-ctr" "Key size and cipher").conflicts_with_all(["aes192", "aes256"]))
         .group(
             ArgGroup::new("aes128")
                 .args(["aes-128-ecb", "aes-128-cbc", "aes-128-ctr"])
@@ -40,9 +40,9 @@ pub fn get_args() -> ArgMatches {
         )
 
         // Only one of
-        .arg(arg!(--"aes-192-ecb").conflicts_with_all(["aes128", "aes256"]))
-        .arg(arg!(--"aes-192-cbc").conflicts_with_all(["aes128", "aes256"]))
-        .arg(arg!(--"aes-192-ctr").conflicts_with_all(["aes128", "aes256"]))
+        .arg(arg!(--"aes-192-ecb" "Key size and cipher").conflicts_with_all(["aes128", "aes256"]))
+        .arg(arg!(--"aes-192-cbc" "Key size and cipher").conflicts_with_all(["aes128", "aes256"]))
+        .arg(arg!(--"aes-192-ctr" "Key size and cipher").conflicts_with_all(["aes128", "aes256"]))
         .group(
             ArgGroup::new("aes192")
                 .args(["aes-192-ecb", "aes-192-cbc", "aes-192-ctr"])
@@ -50,9 +50,9 @@ pub fn get_args() -> ArgMatches {
         )
 
         // Only one of
-        .arg(arg!(--"aes-256-ecb").conflicts_with_all(["aes128", "aes192"]))
-        .arg(arg!(--"aes-256-cbc").conflicts_with_all(["aes128", "aes192"]))
-        .arg(arg!(--"aes-256-ctr").conflicts_with_all(["aes128", "aes192"]))
+        .arg(arg!(--"aes-256-ecb" "Key size and cipher").conflicts_with_all(["aes128", "aes192"]))
+        .arg(arg!(--"aes-256-cbc" "Key size and cipher").conflicts_with_all(["aes128", "aes192"]))
+        .arg(arg!(--"aes-256-ctr" "Key size and cipher").conflicts_with_all(["aes128", "aes192"]))
         .group(
             ArgGroup::new("aes256")
                 .args(["aes-256-ecb", "aes-256-cbc", "aes-256-ctr"])
@@ -60,14 +60,14 @@ pub fn get_args() -> ArgMatches {
         )
 
         // Only one of, required
-        .arg(arg!(-k --key <key> "16,24,32 byte passkey"))
+        .arg(arg!(-k --key <key> "Passphrase to create a passkey"))
         .arg(arg!(-K --hexkey <hexkey> "2-byte hex converted to 16,24,32 byte passkey"))
         .group(ArgGroup::new("passkey").args(["key", "hexkey"]).required(true))
 
         // Only one of
         .arg(arg!(--iv <hexiv> "2-byte hex converted to 16 byte iv").conflicts_with_all(["randiv", "pbkdf2", "argon2"]))
         .arg(
-            arg!(-r --randiv "Random iv output as first block on --encrypt, treat first block as iv on --decrypt")
+            arg!(-r --randiv "Random iv output as 1st block on --encrypt, treat 1st block as iv on --decrypt")
                 .conflicts_with_all(["iv", "pbkdf2", "argon2"]),
         )
         .arg(arg!(--pbkdf2 "Use password-based key derivation function 2 (PBKDF2)").conflicts_with_all(["iv", "randiv", "argon2"]))
@@ -90,8 +90,8 @@ pub fn get_args() -> ArgMatches {
         // Output cipher details to stderr
         .arg(arg!(P: -P "Print the salt/key/iv and exit"))
 
-        // Supress warnings
-        .arg(arg!(-q --quiet "Run quietly, no stderr warnings"))
+        // Supress stderr warnings
+        .arg(arg!(-q --quiet "Silences warnings regarding short or long passwords"))
 
         // Input
         .arg(

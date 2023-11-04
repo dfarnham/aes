@@ -42,24 +42,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     reset_sigpipe()?;
     let mut stdout = io::stdout().lock();
 
-    // Parse command line arguments with Clap
+    // Parse command line arguments enforcing contraints with Clap, see src/argparse.rs
     let args = argparse::get_args();
 
-    // Set the Password-Based Key Derivation Function
-    let kdf = if args.get_flag("pbkdf2") {
-        // PBKDF2 with minimum of 1,000 iterations (defaults to 10,000)
-        let iter = 1_000.max(*args.get_one::<u32>("iter").expect("argparse default"));
-        Some(Kdf::PBKDF2(iter))
-    } else if args.get_flag("argon2") {
-        Some(Kdf::ARGON2)
-    } else {
-        None
-    };
+    // Mode of operation.  This driver only tests encrypt
+    let encrypt: bool = args.get_flag("encrypt");
 
-    // Prevent stderr warning messages for short keys, etc.
+    // Silences warnings regarding short or long passwords
     let quiet = args.get_flag("quiet");
 
-    // Get the argument string for bundled (bits-cipher) options, e.g. --aes-256-cbc
+    // Get the argument string containing bundled (bits-cipher) settings, e.g. --aes-256-cbc
     let ciph_desc = if let Some(s) = args.get_one::<Id>("aes128") {
         s.to_string()
     } else if let Some(s) = args.get_one::<Id>("aes192") {
@@ -69,6 +61,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         "".to_string()
     };
+
+    // Is a random initialization vector being created?
+    let randiv: bool = args.get_flag("randiv");
 
     // Set the cipher mode (ecb, cbc, ctr)
     let cipher = if args.get_flag("ecb") || ciph_desc.contains("ecb") {
@@ -83,7 +78,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         unreachable!("argparse failed")
     };
 
-    // Number of bits can be specified with flags or will be derived from key length in get_passkey32()
+    // Number of bits is specified with flags or will be derived from key length
     let bits_specified = if args.get_flag("128") || ciph_desc.contains("128") {
         Some(128)
     } else if args.get_flag("192") || ciph_desc.contains("192") {
@@ -94,9 +89,25 @@ fn main() -> Result<(), Box<dyn Error>> {
         None
     };
 
-    // 1. Create a 32-byte passkey from the input key
-    // 2. Bits is finalized as [128, 192, 256]
-    // Note: if a KDF is specified the final passkey will be created from this passkey + salt
+    // Set the Key Derivation Function to use
+    let kdf = if args.get_flag("pbkdf2") {
+        // PBKDF2 with minimum of 1,000 iterations (defaults to 10,000)
+        let iter = 1_000.max(*args.get_one::<u32>("iter").expect("argparse default"));
+        Some(Kdf::PBKDF2(iter))
+    } else if args.get_flag("argon2") {
+        Some(Kdf::ARGON2)
+    } else {
+        None
+    };
+
+    // This offset value is used in input/output/padding calculations
+    let first_block_sz = if (kdf.is_some() || randiv) && cipher != Cipher::ECB {
+        16
+    } else {
+        0
+    };
+
+    // Create a 32-byte passkey and set bit size to [128, 192, 256]
     let (bits, passkey) = get_passkey32(
         bits_specified,
         args.get_one::<String>("key"),
@@ -104,26 +115,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         quiet || kdf.is_some(),
     )?;
 
-    // Set the 16-byte initialization vector to random or use supplied hex value
-    let randiv: bool = args.get_flag("randiv");
-    let encrypt: bool = args.get_flag("encrypt");
-    let mut ivector = get_ivector(
-        encrypt && randiv, // conditions for a random iv
-        args.get_one::<String>("iv"),
-        quiet, // squelch warnings re short/truncated keys?
-    )?;
-
-    // This offset value is used in input/output/padding.
-    //
-    // iv will reside in the first block when invoked with --randiv for [CBC, CTR]
-    // salt will reside in the last 8 bytes of first block when using a KDF
-    let first_block_sz = if (kdf.is_some() || randiv) && cipher != Cipher::ECB {
-        16
-    } else {
-        0
-    };
-
-    // Read the input as bytes and perform any Base-64/Hex decodings
+    // Read the input FILE as bytes and perform any Base-64/Hex decodings
     let bytes = read_input_bytes(
         args.get_one::<std::path::PathBuf>("FILE"),
         args.get_flag("ibase64"),
@@ -135,29 +127,57 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Err("aes: empty input".into());
     }
 
-    // =====================
-    //   Encrypt / Decrypt
-    // =====================
+    // Initialize the output byte buffer
     let mut output = vec![];
-    if encrypt {
-        // KDF applied here for options --pbkdf2, --argon2
-        let (passkey, ivector) = match kdf {
+
+    // ============================================================================
+    // Step 1 - Obtain the ivector and passkey, r/w block-1
+    //
+    // Note: iv resides in the 1st block when invoked with --randiv for [CBC, CTR],
+    //       salt resides in the last 8 bytes of the 1st block when using a KDF
+    // ============================================================================
+    let mut ivector = get_ivector(
+        encrypt && randiv, // conditions for a random iv
+        args.get_one::<String>("iv"),
+        quiet, // squelch warnings re short/truncated keys?
+    )?;
+    let (passkey, ivector) = match encrypt {
+        true => match kdf {
             Some(ref hasher) => {
-                // Copy b"Salted__xxxxxxxx" to the first block of output
+                // Copy b"Salted__xxxxxxxx" to the 1st block of output
                 let salt: [u8; 8] = rand::random();
                 output = b"Salted__".to_vec();
                 output.extend(&salt);
                 hasher.keyiv(bits, &passkey, &salt)?
             }
-            None => (passkey, ivector),
-        };
-
-        // Copy the iv to the first block of output
-        // Note: if a KDF was used output is already populated
-        if output.is_empty() && first_block_sz > 0 {
-            output = ivector.to_vec();
+            None => {
+                // Copy the ivector to the 1st block of output
+                if first_block_sz > 0 {
+                    output = ivector.to_vec();
+                }
+                (passkey, ivector)
+            }
+        },
+        false => {
+            // Read the iv (or salt) from the 1st block of input
+            if first_block_sz > 0 {
+                ivector.copy_from_slice(&bytes[..16]);
+            }
+            match kdf {
+                Some(ref hasher) => {
+                    // ivector contains the salt, skip over b"Salted__"
+                    let salt = &ivector[8..];
+                    hasher.keyiv(bits, &passkey, salt)?
+                }
+                None => (passkey, ivector),
+            }
         }
+    };
 
+    // =================================================
+    // Step 2 - Encrypt / Decrypt and handle final block
+    // =================================================
+    if encrypt {
         // Print cipher details to stderr and return
         if args.get_flag("P") {
             let salt = if kdf.is_some() { &output[8..16] } else { &[0u8; 0] };
@@ -173,21 +193,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             output.drain(16 * blocks(bytes.len() + first_block_sz)..);
         }
     } else {
-        // Read the iv (or salt) from the first block of input
-        if first_block_sz > 0 {
-            ivector.copy_from_slice(&bytes[..16]);
-        }
-
-        // KDF applied here for options --pbkdf2, --argon2
-        let (passkey, ivector) = match kdf {
-            Some(ref hasher) => {
-                // ivector contains the salt, skip over b"Salted__"
-                let salt = &ivector[8..];
-                hasher.keyiv(bits, &passkey, salt)?
-            }
-            None => (passkey, ivector),
-        };
-
         // Print cipher details to stderr and return
         if args.get_flag("P") {
             let salt = if kdf.is_some() { &bytes[8..16] } else { &[0u8; 0] };
@@ -210,9 +215,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    // =====================
-    // Output encoded or raw
-    // =====================
+    // =================================
+    // Step 3 - Output as encoded or raw
+    // =================================
     if args.get_flag("obase64") || args.get_flag("ohex") {
         let mut s = match args.get_flag("ohex") {
             true => hex::encode(output),
@@ -238,6 +243,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 #[cfg(test)]
 mod nist_tests;
 
-// Tests
+// =============
+// General Tests
+// =============
 #[cfg(test)]
 mod tests;
