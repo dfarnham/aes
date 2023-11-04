@@ -24,27 +24,27 @@ Arguments:
   [FILE]  File to read, treats '-' as standard input
 
 Options:
-  -e, --encrypt          Encrypt
-  -d, --decrypt          Decrypt
+  -e, --encrypt          Encrypt mode
+  -d, --decrypt          Decrypt mode
   -b, --ecb              Cipher is Electronic Codebook
   -c, --cbc              Cipher is Cipher Block Chaining
   -t, --ctr              Cipher is Integer Counter Mode
-      --128
-      --192
-      --256
-      --aes-128-ecb
-      --aes-128-cbc
-      --aes-128-ctr
-      --aes-192-ecb
-      --aes-192-cbc
-      --aes-192-ctr
-      --aes-256-ecb
-      --aes-256-cbc
-      --aes-256-ctr
-  -k, --key <key>        16,24,32 byte passkey
+      --128              Key size
+      --192              Key size
+      --256              Key size
+      --aes-128-ecb      Key size and cipher
+      --aes-128-cbc      Key size and cipher
+      --aes-128-ctr      Key size and cipher
+      --aes-192-ecb      Key size and cipher
+      --aes-192-cbc      Key size and cipher
+      --aes-192-ctr      Key size and cipher
+      --aes-256-ecb      Key size and cipher
+      --aes-256-cbc      Key size and cipher
+      --aes-256-ctr      Key size and cipher
+  -k, --key <key>        Passphrase to create a passkey
   -K, --hexkey <hexkey>  2-byte hex converted to 16,24,32 byte passkey
-      --iv <hexiv>       2-byte hex converted to 16 byte iv
-  -r, --randiv           Random iv output as first block on --encrypt, treat first block as iv on --decrypt
+      --iv <hexiv>       2-byte hex converted to 16 byte iv (or salt with --pbkdf2, --argon2)
+  -r, --randiv           Random iv output as 1st block on --encrypt, treat 1st block as iv on --decrypt
       --pbkdf2           Use password-based key derivation function 2 (PBKDF2)
       --argon2           Use password-based key derivation Argon2id
       --iter <iter>      iterations for PBKDF2 [default: 10000]
@@ -54,7 +54,7 @@ Options:
   -X, --ihex             Input is 2-byte hex
       --nopkcs           Prevent a full pad block on --encrypt, skip PKCS#7 pad removal on --decrypt
   -P                     Print the salt/key/iv and exit
-  -q, --quiet            Run quietly, no stderr warnings
+  -q, --quiet            Silences warnings regarding short or long passwords
   -h, --help             Print help
   -V, --version          Print version
 ```
