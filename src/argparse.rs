@@ -18,7 +18,7 @@ pub fn get_args() -> ArgMatches {
         .group(ArgGroup::new("cryptmode").args(["encrypt", "decrypt"]).required(true))
 
         // Only one of
-        .arg(arg!(-b --ecb "Cipher is Electronic Codebook").conflicts_with_all(["aes128", "aes192", "aes256"]))
+        .arg(arg!(-b --ecb "Cipher is Electronic Codebook").conflicts_with_all(["aes128", "aes192", "aes256", "iv", "randiv"]))
         .arg(arg!(-c --cbc "Cipher is Cipher Block Chaining").conflicts_with_all(["aes128", "aes192", "aes256"]))
         .arg(arg!(-t --ctr "Cipher is Integer Counter Mode").conflicts_with_all(["aes128", "aes192", "aes256"]))
         .group(ArgGroup::new("cipher").args(["ecb", "cbc", "ctr"]).required(false))
@@ -30,7 +30,7 @@ pub fn get_args() -> ArgMatches {
         .group(ArgGroup::new("bits").args(["128", "192", "256"]).required(false))
 
         // Only one of
-        .arg(arg!(--"aes-128-ecb" "Key size and cipher").conflicts_with_all(["aes192", "aes256"]))
+        .arg(arg!(--"aes-128-ecb" "Key size and cipher").conflicts_with_all(["aes192", "aes256", "iv", "randiv"]))
         .arg(arg!(--"aes-128-cbc" "Key size and cipher").conflicts_with_all(["aes192", "aes256"]))
         .arg(arg!(--"aes-128-ctr" "Key size and cipher").conflicts_with_all(["aes192", "aes256"]))
         .group(
@@ -40,7 +40,7 @@ pub fn get_args() -> ArgMatches {
         )
 
         // Only one of
-        .arg(arg!(--"aes-192-ecb" "Key size and cipher").conflicts_with_all(["aes128", "aes256"]))
+        .arg(arg!(--"aes-192-ecb" "Key size and cipher").conflicts_with_all(["aes128", "aes256", "iv", "randiv"]))
         .arg(arg!(--"aes-192-cbc" "Key size and cipher").conflicts_with_all(["aes128", "aes256"]))
         .arg(arg!(--"aes-192-ctr" "Key size and cipher").conflicts_with_all(["aes128", "aes256"]))
         .group(
@@ -50,7 +50,7 @@ pub fn get_args() -> ArgMatches {
         )
 
         // Only one of
-        .arg(arg!(--"aes-256-ecb" "Key size and cipher").conflicts_with_all(["aes128", "aes192"]))
+        .arg(arg!(--"aes-256-ecb" "Key size and cipher").conflicts_with_all(["aes128", "aes192", "iv", "randiv"]))
         .arg(arg!(--"aes-256-cbc" "Key size and cipher").conflicts_with_all(["aes128", "aes192"]))
         .arg(arg!(--"aes-256-ctr" "Key size and cipher").conflicts_with_all(["aes128", "aes192"]))
         .group(

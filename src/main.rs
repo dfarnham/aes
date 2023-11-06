@@ -101,7 +101,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // This offset value is used in input/output/padding calculations
-    let first_block_sz = if (kdf.is_some() || randiv) && cipher != Cipher::ECB {
+    let first_block_sz = if kdf.is_some() || (randiv && cipher != Cipher::ECB) {
         16
     } else {
         0

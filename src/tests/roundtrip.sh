@@ -22,52 +22,66 @@ digest() {
 
 expected=`echo "roundtrip hello world" | /usr/bin/shasum | cut -c1-40`
 # ARGON2
-digest "$expected" "`echo "$text" | \
-    aes --aes-128-cbc -e --argon2 -k password | \
-    aes --aes-128-cbc -d --argon2 -k password`"
-digest "$expected" "`echo "$text" | \
-    aes --aes-192-cbc -e --argon2 -k password | \
-    aes --aes-192-cbc -d --argon2 -k password`"
-digest "$expected" "`echo "$text" | \
-    aes --aes-256-cbc -e --argon2 -k password | \
-    aes --aes-256-cbc -d --argon2 -k password`"
+for cipher in ecb ctr cbc
+do
+    for bits in 128 192 256
+    do
+        digest "$expected" "`echo "$text" | \
+            aes --aes-${bits}-${cipher} -e --argon2 -k password | \
+            aes --aes-${bits}-${cipher} -d --argon2 -k password`"
+    done
+done
 
 # PBKDF2
-digest "$expected" "`echo "$text" | \
-    openssl aes-256-cbc -e -pbkdf2 -k password | \
-    aes --aes-256-cbc -d --pbkdf2 -k password`"
+for cipher in ecb ctr cbc
+do
+    for bits in 128 192 256
+    do
+        digest "$expected" "`echo "$text" | \
+            openssl aes-${bits}-${cipher} -e -pbkdf2 -k password | \
+            aes --aes-${bits}-${cipher} -d --pbkdf2 -k password`"
 
-digest "$expected" "`echo "$text" | \
-    aes --aes-256-cbc -e --pbkdf2 -k password | \
-    openssl aes-256-cbc -d -pbkdf2 -k password`"
+        digest "$expected" "`echo "$text" | \
+            aes --aes-${bits}-${cipher} -e --pbkdf2 -k password | \
+            openssl aes-${bits}-${cipher} -d -pbkdf2 -k password`"
+    done
+done
 
 # ECB
-digest "$expected" "`echo "$text" | \
-	openssl enc -aes-128-ecb -e -K d3b07384d113edec49eaa6238ad5ff00 | \
-	aes --aes-128-ecb -d -K d3b07384d113edec49eaa6238ad5ff00`"
+for bits in 128 192 256
+do
+    digest "$expected" "`echo "$text" | \
+        openssl enc -aes-${bits}-ecb -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+        aes --aes-${bits}-ecb -d -K d3b07384d113edec49eaa6238ad5ff00`"
 
-digest "$expected" "`echo "$text" | \
-	aes --aes-128-ecb -e -K d3b07384d113edec49eaa6238ad5ff00 | \
-	openssl enc -aes-128-ecb -d -K d3b07384d113edec49eaa6238ad5ff00`"
+    digest "$expected" "`echo "$text" | \
+        aes --aes-${bits}-ecb -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+        openssl enc -aes-${bits}-ecb -d -K d3b07384d113edec49eaa6238ad5ff00`"
+done
 
 # CBC + IV
-digest "$expected" "`echo "$text" | \
-	openssl enc -aes-128-cbc -iv ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
-	aes --aes-128-cbc --iv=ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00`"
+for bits in 128 192 256
+do
+    digest "$expected" "`echo "$text" | \
+        openssl enc -aes-${bits}-cbc -iv ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+        aes --aes-${bits}-cbc --iv=ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00`"
 
-digest "$expected" "`echo "$text" | \
-	aes --aes-128-cbc --iv=ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
-	openssl enc -aes-128-cbc -iv ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00`"
+    digest "$expected" "`echo "$text" | \
+        aes --aes-${bits}-cbc --iv=ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+        openssl enc -aes-${bits}-cbc -iv ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00`"
+done
 
 # CTR + IV
-digest "$expected" "`echo "$text" | \
-   openssl enc -aes-128-ctr -iv ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
-   aes --aes-128-ctr --iv=ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00`"
+for bits in 128 192 256
+do
+    digest "$expected" "`echo "$text" | \
+       openssl enc -aes-${bits}-ctr -iv ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+       aes --aes-${bits}-ctr --iv=ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00`"
 
-digest "$expected" "`echo "$text" | \
-   aes --aes-128-ctr --iv=ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
-   openssl enc -aes-128-ctr -iv ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00`"
-
+    digest "$expected" "`echo "$text" | \
+       aes --aes-${bits}-ctr --iv=ABCDEF0123456789A0B1C2D3E4F56789 -e -K d3b07384d113edec49eaa6238ad5ff00 | \
+       openssl enc -aes-${bits}-ctr -iv ABCDEF0123456789A0B1C2D3E4F56789 -d -K d3b07384d113edec49eaa6238ad5ff00`"
+done
 
 #
 # Base-64 in/out
