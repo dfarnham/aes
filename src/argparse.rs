@@ -100,7 +100,8 @@ pub fn get_args() -> ArgMatches {
             arg!(<FILE> "File to read, treats '-' as standard input")
                 .required(false)
                 .value_parser(value_parser!(PathBuf)),
-        );
+        )
+        .after_help("Examples:\n  aes -e --aes-256-cbc --argon2 -a -k password file\n  aes -d --aes-256-cbc --argon2 -A -k password file.aes");
 
     app.get_matches_from(env::args().collect::<Vec<String>>())
 }
